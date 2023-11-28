@@ -114,7 +114,7 @@ public:
 	}
 
 	uint16_t getLengthHeader() const {
-		return static_cast<uint16_t>(buffer[0] | buffer[1] << 8);
+		return safe_convert<uint16_t>(buffer[0] | buffer[1] << 8, __FUNCTION__);
 	}
 
 	int32_t decodeHeader();

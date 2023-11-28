@@ -150,7 +150,7 @@ namespace account {
 			logger.error(
 				"Failed to register transaction: 'account:[{}], transaction "
 				"type:[{}], coins:[{}], coin type:[{}], description:[{}]",
-				m_account.id, static_cast<uint8_t>(transactionType), amount, static_cast<uint8_t>(type), detail
+				m_account.id, safe_convert<uint8_t>(transactionType, __FUNCTION__), amount, safe_convert<uint8_t>(type, __FUNCTION__), detail
 			);
 		}
 	}
@@ -170,7 +170,7 @@ namespace account {
 	}
 
 	void Account::addPremiumDays(const int32_t &days) {
-		auto timeLeft = static_cast<int32_t>((m_account.premiumLastDay - getTimeNow()) % 86400);
+		auto timeLeft = safe_convert<int32_t>((m_account.premiumLastDay - getTimeNow()) % 86400, __FUNCTION__);
 		setPremiumDays(m_account.premiumRemainingDays + days);
 
 		if (timeLeft > 0) {
@@ -199,8 +199,8 @@ namespace account {
 
 		time_t currentTime = getTimeNow();
 
-		auto daysLeft = static_cast<int32_t>((lastDay - currentTime) / 86400);
-		auto timeLeft = static_cast<int32_t>((lastDay - currentTime) % 86400);
+		auto daysLeft = safe_convert<int32_t>((lastDay - currentTime) / 86400, __FUNCTION__);
+		auto timeLeft = safe_convert<int32_t>((lastDay - currentTime) % 86400, __FUNCTION__);
 
 		m_account.premiumRemainingDays = daysLeft > 0 ? daysLeft : 0;
 
@@ -257,7 +257,7 @@ namespace account {
 	}
 
 	uint32_t Account::getAccountAgeInDays() const {
-		return static_cast<uint32_t>(std::ceil((getTimeNow() - m_account.creationTime) / 86400));
+		return safe_convert<uint32_t>(std::ceil((getTimeNow() - m_account.creationTime) / 86400), __FUNCTION__);
 	}
 
 } // namespace account

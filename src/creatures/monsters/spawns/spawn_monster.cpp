@@ -76,7 +76,7 @@ bool SpawnsMonster::loadFromXML(const std::string &filemonstername) {
 
 				pugi::xml_attribute directionAttribute = childMonsterNode.attribute("direction");
 				if (directionAttribute) {
-					dir = static_cast<Direction>(pugi::cast<uint16_t>(directionAttribute.value()));
+					dir = safe_convert<Direction>(pugi::cast<uint16_t>(directionAttribute.value()), __FUNCTION__);
 				} else {
 					dir = DIRECTION_NORTH;
 				}
@@ -84,8 +84,8 @@ bool SpawnsMonster::loadFromXML(const std::string &filemonstername) {
 				auto xOffset = pugi::cast<int16_t>(childMonsterNode.attribute("x").value());
 				auto yOffset = pugi::cast<int16_t>(childMonsterNode.attribute("y").value());
 				Position pos(
-					static_cast<uint16_t>(centerPos.x + xOffset),
-					static_cast<uint16_t>(centerPos.y + yOffset),
+					safe_convert<uint16_t>(centerPos.x + xOffset, __FUNCTION__),
+					safe_convert<uint16_t>(centerPos.y + yOffset, __FUNCTION__),
 					centerPos.z
 				);
 
@@ -97,7 +97,7 @@ bool SpawnsMonster::loadFromXML(const std::string &filemonstername) {
 
 				uint32_t interval = pugi::cast<uint32_t>(childMonsterNode.attribute("spawntime").value()) * 1000 * 100 / std::max((uint32_t)1, (g_configManager().getNumber(RATE_SPAWN, __FUNCTION__) * boostedrate * eventschedule));
 				if (interval >= MONSTER_MINSPAWN_INTERVAL && interval <= MONSTER_MAXSPAWN_INTERVAL) {
-					spawnMonster.addMonster(nameAttribute.as_string(), pos, dir, static_cast<uint32_t>(interval));
+					spawnMonster.addMonster(nameAttribute.as_string(), pos, dir, safe_convert<uint32_t>(interval, __FUNCTION__));
 				} else {
 					if (interval <= MONSTER_MINSPAWN_INTERVAL) {
 						g_logger().warn("[SpawnsMonster::loadFromXml] - {} {} spawntime cannot be less than {} seconds, set to {} by default.", nameAttribute.as_string(), pos.toString(), MONSTER_MINSPAWN_INTERVAL / 1000, MONSTER_MINSPAWN_INTERVAL / 1000);
@@ -233,7 +233,7 @@ void SpawnMonster::checkSpawnMonster() {
 				scheduleSpawn(spawnMonsterId, sb, 3 * NONBLOCKABLE_SPAWN_MONSTER_INTERVAL);
 			}
 
-			if (++spawnMonsterCount >= static_cast<uint32_t>(g_configManager().getNumber(RATE_SPAWN, __FUNCTION__))) {
+			if (++spawnMonsterCount >= safe_convert<uint32_t>(g_configManager().getNumber(RATE_SPAWN, __FUNCTION__), __FUNCTION__)) {
 				break;
 			}
 		}

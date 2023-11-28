@@ -41,15 +41,15 @@ bool Weapons::registerLuaEvent(WeaponShared_ptr event) {
 // Monsters
 int32_t Weapons::getMaxMeleeDamage(int32_t attackSkill, int32_t attackValue) {
 	// Returns maximum melee attack damage, rounding up
-	return static_cast<int32_t>(std::ceil((attackSkill * (attackValue * 0.05)) + (attackValue * 0.5)));
+	return safe_convert<int32_t>(std::ceil((attackSkill * (attackValue * 0.05)) + (attackValue * 0.5)), __FUNCTION__);
 }
 
 // Players
 int32_t Weapons::getMaxWeaponDamage(uint32_t level, int32_t attackSkill, int32_t attackValue, float attackFactor, bool isMelee) {
 	if (isMelee) {
-		return static_cast<int32_t>(std::round((0.085 * attackFactor * attackValue * attackSkill) + (level / 5)));
+		return safe_convert<int32_t>(std::round((0.085 * attackFactor * attackValue * attackSkill) + (level / 5)), __FUNCTION__);
 	} else {
-		return static_cast<int32_t>(std::round((0.09 * attackFactor * attackValue * attackSkill) + (level / 5)));
+		return safe_convert<int32_t>(std::round((0.09 * attackFactor * attackValue * attackSkill) + (level / 5)), __FUNCTION__);
 	}
 }
 
@@ -130,13 +130,13 @@ CombatDamage Weapon::getCombatDamage(CombatDamage combat, std::shared_ptr<Player
 	double weaponAttackProportion = (double)weaponAttack / (double)totalAttack;
 
 	// Calculating damage
-	int32_t maxDamage = static_cast<int32_t>(Weapons::getMaxWeaponDamage(level, playerSkill, totalAttack, attackFactor, true) * player->getVocation()->meleeDamageMultiplier * damageModifier / 100);
-	int32_t minDamage = level / 5;
+	int32_t maxDamage = Weapons::getMaxWeaponDamage(level, playerSkill, totalAttack, attackFactor, true) * safe_convert<int32_t>(player->getVocation()->meleeDamageMultiplier, __FUNCTION__) * damageModifier / 100;
+	int32_t minDamage = safe_convert<int32_t>(level, __FUNCTION__) / 5;
 	int32_t realDamage = normal_random(minDamage, maxDamage);
 
 	// Setting damage to combat
-	combat.primary.value = realDamage * weaponAttackProportion;
-	combat.secondary.value = realDamage * (1 - weaponAttackProportion);
+	combat.primary.value = realDamage * safe_convert<int32_t>(weaponAttackProportion, __FUNCTION__);
+	combat.secondary.value = realDamage * (1 - safe_convert<int32_t>(weaponAttackProportion, __FUNCTION__));
 	return combat;
 }
 
@@ -251,16 +251,16 @@ void Weapon::onUsedWeapon(std::shared_ptr<Player> player, std::shared_ptr<Item> 
 	uint32_t manaCost = getManaCost(player);
 	if (manaCost != 0) {
 		player->addManaSpent(manaCost);
-		player->changeMana(-static_cast<int32_t>(manaCost));
+		player->changeMana(-safe_convert<int32_t>(manaCost, __FUNCTION__));
 	}
 
 	uint32_t healthCost = getHealthCost(player);
 	if (healthCost != 0) {
-		player->changeHealth(-static_cast<int32_t>(healthCost));
+		player->changeHealth(-safe_convert<int32_t>(healthCost, __FUNCTION__));
 	}
 
 	if (!player->hasFlag(PlayerFlags_t::HasInfiniteSoul) && soul > 0) {
-		player->changeSoul(-static_cast<int32_t>(soul));
+		player->changeSoul(-safe_convert<int32_t>(soul, __FUNCTION__));
 	}
 
 	if (breakChance != 0 && uniform_random(1, 100) <= breakChance) {
@@ -307,14 +307,14 @@ uint32_t Weapon::getManaCost(std::shared_ptr<Player> player) const {
 
 int32_t Weapon::getHealthCost(std::shared_ptr<Player> player) const {
 	if (health != 0) {
-		return health;
+		return safe_convert<int32_t>(health, __FUNCTION__);
 	}
 
 	if (healthPercent == 0) {
 		return 0;
 	}
 
-	return (player->getMaxHealth() * healthPercent) / 100;
+	return (player->getMaxHealth() * safe_convert<int32_t>(healthPercent, __FUNCTION__)) / 100;
 }
 
 bool Weapon::executeUseWeapon(std::shared_ptr<Player> player, const LuaVariant &var) const {
@@ -469,14 +469,14 @@ int32_t WeaponMelee::getElementDamage(std::shared_ptr<Player> player, std::share
 	int32_t attackValue = elementDamage;
 	float attackFactor = player->getAttackFactor();
 	uint32_t level = player->getLevel();
-	int32_t minValue = level / 5;
+	int32_t minValue = safe_convert<int32_t>(level, __FUNCTION__) / 5;
 
 	int32_t maxValue = Weapons::getMaxWeaponDamage(level, attackSkill, attackValue, attackFactor, true);
-	return -normal_random(minValue, static_cast<int32_t>(maxValue * player->getVocation()->meleeDamageMultiplier));
+	return -normal_random(minValue, maxValue * safe_convert<int32_t>(player->getVocation()->meleeDamageMultiplier, __FUNCTION__));
 }
 
 int16_t WeaponMelee::getElementDamageValue() const {
-	return elementDamage;
+	return safe_convert<int16_t>(elementDamage, __FUNCTION__);
 }
 
 int32_t WeaponMelee::getWeaponDamage(std::shared_ptr<Player> player, std::shared_ptr<Creature>, std::shared_ptr<Item> item, bool maxDamage /*= false*/) const {
@@ -486,15 +486,15 @@ int32_t WeaponMelee::getWeaponDamage(std::shared_ptr<Player> player, std::shared
 	float attackFactor = player->getAttackFactor();
 	uint32_t level = player->getLevel();
 
-	int32_t maxValue = static_cast<int32_t>(Weapons::getMaxWeaponDamage(level, attackSkill, attackValue, attackFactor, true) * player->getVocation()->meleeDamageMultiplier);
+	int32_t maxValue = Weapons::getMaxWeaponDamage(level, attackSkill, attackValue, attackFactor, true) * safe_convert<int32_t>(player->getVocation()->meleeDamageMultiplier, __FUNCTION__);
 
-	int32_t minValue = level / 5;
+	int32_t minValue = safe_convert<int32_t>(level, __FUNCTION__) / 5;
 
 	if (maxDamage) {
 		return -maxValue;
 	}
 
-	return -normal_random(minValue, (maxValue * static_cast<int32_t>(player->getVocation()->meleeDamageMultiplier)));
+	return -normal_random(minValue, (maxValue * safe_convert<int32_t>(player->getVocation()->meleeDamageMultiplier, __FUNCTION__)));
 }
 
 WeaponDistance::WeaponDistance(LuaScriptInterface* interface) :
@@ -582,22 +582,22 @@ bool WeaponDistance::useWeapon(std::shared_ptr<Player> player, std::shared_ptr<I
 			switch (distance) {
 				case 1:
 				case 5:
-					chance = std::min<uint32_t>(skill, 74) + 1;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 74) + 1, __FUNCTION__);
 					break;
 				case 2:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 28) * 2.40f) + 8;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 28) * safe_convert<uint32_t>(2.40f) + 8, __FUNCTION__);
 					break;
 				case 3:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 45) * 1.55f) + 6;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 45) * safe_convert<uint32_t>(1.55f) + 6, __FUNCTION__);
 					break;
 				case 4:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 58) * 1.25f) + 3;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 58) * safe_convert<uint32_t>(1.25f) + 3, __FUNCTION__);
 					break;
 				case 6:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 90) * 0.80f) + 3;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 90) * safe_convert<uint32_t>(0.80f) + 3, __FUNCTION__);
 					break;
 				case 7:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 104) * 0.70f) + 2;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 104) * safe_convert<uint32_t>(0.70f) + 2, __FUNCTION__);
 					break;
 				default:
 					chance = it.hitChance;
@@ -608,20 +608,20 @@ bool WeaponDistance::useWeapon(std::shared_ptr<Player> player, std::shared_ptr<I
 			switch (distance) {
 				case 1:
 				case 5:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 74) * 1.20f) + 1;
+					chance = safe_convert<int32_t>((std::min<uint32_t>(skill, 74) * safe_convert<uint32_t>(1.20f)) + 1, __FUNCTION__);
 					break;
 				case 2:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 28) * 3.20f);
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 28) * safe_convert<uint32_t>(3.20f), __FUNCTION__);
 					break;
 				case 3:
-					chance = std::min<uint32_t>(skill, 45) * 2;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 45) * 2, __FUNCTION__);
 					break;
 				case 4:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 58) * 1.55f);
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 58) * safe_convert<uint32_t>(1.55f), __FUNCTION__);
 					break;
 				case 6:
 				case 7:
-					chance = std::min<uint32_t>(skill, 90);
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 90), __FUNCTION__);
 					break;
 				default:
 					chance = it.hitChance;
@@ -631,29 +631,29 @@ bool WeaponDistance::useWeapon(std::shared_ptr<Player> player, std::shared_ptr<I
 			switch (distance) {
 				case 1:
 				case 5:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 73) * 1.35f) + 1;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 73) * safe_convert<uint32_t>(1.35f) + 1, __FUNCTION__);
 					break;
 				case 2:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 30) * 3.20f) + 4;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 30) * safe_convert<uint32_t>(3.20f) + 4, __FUNCTION__);
 					break;
 				case 3:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 48) * 2.05f) + 2;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 48) * safe_convert<uint32_t>(2.05f) + 2, __FUNCTION__);
 					break;
 				case 4:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 65) * 1.50f) + 2;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 65) * safe_convert<uint32_t>(1.50f) + 2, __FUNCTION__);
 					break;
 				case 6:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 87) * 1.20f) - 4;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 87) * safe_convert<uint32_t>(1.20f) - 4, __FUNCTION__);
 					break;
 				case 7:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 90) * 1.10f) + 1;
+					chance = safe_convert<int32_t>(std::min<uint32_t>(skill, 90) * safe_convert<uint32_t>(1.10f) + 1, __FUNCTION__);
 					break;
 				default:
 					chance = it.hitChance;
 					break;
 			}
 		} else {
-			chance = maxHitChance;
+			chance = safe_convert<int32_t>(maxHitChance, __FUNCTION__);
 		}
 	} else {
 		chance = it.hitChance;
@@ -682,7 +682,7 @@ bool WeaponDistance::useWeapon(std::shared_ptr<Player> player, std::shared_ptr<I
 
 			for (const auto &dir : destList) {
 				// Blocking tiles or tiles without ground ain't valid targets for spears
-				auto tmpTile = g_game().map.getTile(static_cast<uint16_t>(destPos.x + dir.first), static_cast<uint16_t>(destPos.y + dir.second), destPos.z);
+				auto tmpTile = g_game().map.getTile(safe_convert<uint16_t>(destPos.x + dir.first, __FUNCTION__), safe_convert<uint16_t>(destPos.y + dir.second, __FUNCTION__), destPos.z);
 				if (tmpTile && !tmpTile->hasFlag(TILESTATE_IMMOVABLEBLOCKSOLID) && tmpTile->getGround() != nullptr) {
 					destTile = tmpTile;
 					break;
@@ -712,8 +712,8 @@ int32_t WeaponDistance::getElementDamage(std::shared_ptr<Player> player, std::sh
 	int32_t attackSkill = player->getSkillLevel(SKILL_DISTANCE);
 	float attackFactor = player->getAttackFactor();
 
-	int32_t minValue = std::round(player->getLevel() / 5);
-	int32_t maxValue = std::round((0.09f * attackFactor) * attackSkill * attackValue + minValue) / 2;
+	int32_t minValue = safe_convert<int32_t>(std::round(player->getLevel() / 5), __FUNCTION__);
+	int32_t maxValue = safe_convert<int32_t>(std::round((0.09f * attackFactor) * safe_convert<float>(attackSkill * attackValue + minValue)) / 2, __FUNCTION__);
 
 	if (target) {
 		if (target->getPlayer()) {
@@ -723,11 +723,11 @@ int32_t WeaponDistance::getElementDamage(std::shared_ptr<Player> player, std::sh
 		}
 	}
 
-	return -normal_random(minValue, static_cast<int32_t>(maxValue * player->getVocation()->distDamageMultiplier));
+	return -normal_random(minValue, maxValue * safe_convert<int32_t>(player->getVocation()->distDamageMultiplier, __FUNCTION__));
 }
 
 int16_t WeaponDistance::getElementDamageValue() const {
-	return elementDamage;
+	return safe_convert<int16_t>(elementDamage, __FUNCTION__);
 }
 
 int32_t WeaponDistance::getWeaponDamage(std::shared_ptr<Player> player, std::shared_ptr<Creature> target, std::shared_ptr<Item> item, bool maxDamage /*= false*/) const {
@@ -750,8 +750,8 @@ int32_t WeaponDistance::getWeaponDamage(std::shared_ptr<Player> player, std::sha
 	int32_t attackSkill = player->getSkillLevel(SKILL_DISTANCE);
 	float attackFactor = player->getAttackFactor();
 
-	int32_t minValue = player->getLevel() / 5;
-	int32_t maxValue = std::round((0.09f * attackFactor) * attackSkill * attackValue + minValue);
+	int32_t minValue = safe_convert<int32_t>(player->getLevel(), __FUNCTION__) / 5;
+	int32_t maxValue = safe_convert<int32_t>(std::round((0.09f * attackFactor) * safe_convert<float>(attackSkill * attackValue + minValue)), __FUNCTION__);
 	if (maxDamage) {
 		return -maxValue;
 	}
@@ -769,7 +769,7 @@ int32_t WeaponDistance::getWeaponDamage(std::shared_ptr<Player> player, std::sha
 		}
 	}
 
-	return -normal_random(minValue, (maxValue * static_cast<int32_t>(player->getVocation()->distDamageMultiplier)));
+	return -normal_random(minValue, (maxValue * safe_convert<int32_t>(player->getVocation()->distDamageMultiplier, __FUNCTION__)));
 }
 
 bool WeaponDistance::getSkillType(std::shared_ptr<Player> player, std::shared_ptr<Item>, skills_t &skill, uint32_t &skillpoint) const {

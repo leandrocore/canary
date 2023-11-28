@@ -28,12 +28,12 @@ void PreySlot::reloadBonusType() {
 	if (bonusRarity == 10) {
 		PreyBonus_t bonus_tmp = bonus;
 		while (bonus_tmp == bonus) {
-			bonus = static_cast<PreyBonus_t>(uniform_random(PreyBonus_First, PreyBonus_Last));
+			bonus = safe_convert<PreyBonus_t>(uniform_random(PreyBonus_First, PreyBonus_Last), __FUNCTION__);
 		}
 		return;
 	}
 
-	bonus = static_cast<PreyBonus_t>(uniform_random(PreyBonus_First, PreyBonus_Last));
+	bonus = safe_convert<PreyBonus_t>(uniform_random(PreyBonus_First, PreyBonus_Last), __FUNCTION__);
 }
 
 void PreySlot::reloadBonusValue() {
@@ -41,7 +41,7 @@ void PreySlot::reloadBonusValue() {
 		bonusRarity = 10;
 	} else {
 		// Every time you roll it will increase the rarity (star)
-		bonusRarity = static_cast<uint8_t>(uniform_random(bonusRarity + 1, 10));
+		bonusRarity = safe_convert<uint8_t>(uniform_random(bonusRarity + 1, 10), __FUNCTION__);
 	}
 	if (bonus == PreyBonus_Damage) {
 		bonusPercentage = 2 * bonusRarity + 5;
@@ -71,7 +71,7 @@ void PreySlot::reloadMonsterGrid(std::vector<uint16_t> blackList, uint32_t level
 	uint8_t stageTwo;
 	uint8_t stageThree;
 	uint8_t stageFour;
-	if (auto levelStage = static_cast<uint32_t>(std::floor(level / 100));
+	if (auto levelStage = safe_convert<uint32_t>(std::floor(level / 100), __FUNCTION__);
 		levelStage == 0) { // From level 0 to 99
 		stageOne = 3;
 		stageTwo = 3;
@@ -95,7 +95,7 @@ void PreySlot::reloadMonsterGrid(std::vector<uint16_t> blackList, uint32_t level
 	}
 
 	uint8_t tries = 0;
-	auto maxIndex = static_cast<int32_t>(bestiary.size() - 1);
+	auto maxIndex = safe_convert<int32_t>(bestiary.size() - 1, __FUNCTION__);
 	while (raceIdList.size() < 9) {
 		uint16_t raceId = (*(std::next(bestiary.begin(), uniform_random(0, maxIndex)))).first;
 		tries++;
@@ -152,7 +152,7 @@ void TaskHuntingSlot::reloadMonsterGrid(std::vector<uint16_t> blackList, uint32_
 	uint8_t stageTwo;
 	uint8_t stageThree;
 	uint8_t stageFour;
-	if (auto levelStage = static_cast<uint32_t>(std::floor(level / 100));
+	if (auto levelStage = safe_convert<uint32_t>(std::floor(level / 100), __FUNCTION__);
 		levelStage == 0) { // From level 0 to 99
 		stageOne = 3;
 		stageTwo = 3;
@@ -176,7 +176,7 @@ void TaskHuntingSlot::reloadMonsterGrid(std::vector<uint16_t> blackList, uint32_
 	}
 
 	uint8_t tries = 0;
-	auto maxIndex = static_cast<int32_t>(bestiary.size() - 1);
+	auto maxIndex = safe_convert<int32_t>(bestiary.size() - 1, __FUNCTION__);
 	while (raceIdList.size() < 9) {
 		uint16_t raceId = (*(std::next(bestiary.begin(), uniform_random(0, maxIndex)))).first;
 		tries++;
@@ -251,25 +251,25 @@ void IOPrey::checkPlayerPreys(std::shared_ptr<Player> player, uint8_t amount) co
 	}
 
 	for (uint8_t slotId = PreySlot_First; slotId <= PreySlot_Last; slotId++) {
-		if (const auto &slot = player->getPreySlotById(static_cast<PreySlot_t>(slotId));
+		if (const auto &slot = player->getPreySlotById(safe_convert<PreySlot_t>(slotId, __FUNCTION__));
 			slot && slot->isOccupied()) {
 			if (slot->bonusTimeLeft <= amount) {
 				if (slot->option == PreyOption_AutomaticReroll) {
-					if (player->usePreyCards(static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_REROLL_PRICE, __FUNCTION__)))) {
+					if (player->usePreyCards(safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_REROLL_PRICE, __FUNCTION__), __FUNCTION__))) {
 						slot->reloadBonusType();
 						slot->reloadBonusValue();
-						slot->bonusTimeLeft = static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__));
+						slot->bonusTimeLeft = safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__), __FUNCTION__);
 						player->sendTextMessage(MESSAGE_STATUS, "Your prey bonus type and time has been succesfully reseted.");
-						player->reloadPreySlot(static_cast<PreySlot_t>(slotId));
+						player->reloadPreySlot(safe_convert<PreySlot_t>(slotId, __FUNCTION__));
 						continue;
 					}
 
 					player->sendTextMessage(MESSAGE_STATUS, "You don't have enought prey cards to enable automatic reroll when your slot expire.");
 				} else if (slot->option == PreyOption_Locked) {
-					if (player->usePreyCards(static_cast<uint16_t>(g_configManager().getNumber(PREY_SELECTION_LIST_PRICE, __FUNCTION__)))) {
-						slot->bonusTimeLeft = static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__));
+					if (player->usePreyCards(safe_convert<uint16_t>(g_configManager().getNumber(PREY_SELECTION_LIST_PRICE, __FUNCTION__), __FUNCTION__))) {
+						slot->bonusTimeLeft = safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__), __FUNCTION__);
 						player->sendTextMessage(MESSAGE_STATUS, "Your prey bonus time has been succesfully reseted.");
-						player->reloadPreySlot(static_cast<PreySlot_t>(slotId));
+						player->reloadPreySlot(safe_convert<PreySlot_t>(slotId, __FUNCTION__));
 						continue;
 					}
 
@@ -279,7 +279,7 @@ void IOPrey::checkPlayerPreys(std::shared_ptr<Player> player, uint8_t amount) co
 				}
 
 				slot->eraseBonus();
-				player->reloadPreySlot(static_cast<PreySlot_t>(slotId));
+				player->reloadPreySlot(safe_convert<PreySlot_t>(slotId, __FUNCTION__));
 			} else {
 				slot->bonusTimeLeft -= amount;
 				player->sendPreyTimeLeft(slot);
@@ -309,7 +309,7 @@ void IOPrey::parsePreyAction(std::shared_ptr<Player> player, PreySlot_t slotId, 
 		}
 		slot->reloadMonsterGrid(player->getPreyBlackList(), player->getLevel());
 	} else if (action == PreyAction_ListAll_Cards) {
-		if (!player->usePreyCards(static_cast<uint16_t>(g_configManager().getNumber(PREY_SELECTION_LIST_PRICE, __FUNCTION__)))) {
+		if (!player->usePreyCards(safe_convert<uint16_t>(g_configManager().getNumber(PREY_SELECTION_LIST_PRICE, __FUNCTION__), __FUNCTION__))) {
 			player->sendMessageDialog("You don't have enought prey cards to choose a monsters on the list.");
 			return;
 		}
@@ -337,19 +337,19 @@ void IOPrey::parsePreyAction(std::shared_ptr<Player> player, PreySlot_t slotId, 
 		slot->state = PreyDataState_Active;
 		slot->selectedRaceId = raceId;
 		slot->removeMonsterType(raceId);
-		slot->bonusTimeLeft = static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__));
+		slot->bonusTimeLeft = safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__), __FUNCTION__);
 	} else if (action == PreyAction_BonusReroll) {
 		if (!slot->isOccupied()) {
 			player->sendMessageDialog("You don't have any active monster on this prey slot.");
 			return;
-		} else if (!player->usePreyCards(static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_REROLL_PRICE, __FUNCTION__)))) {
+		} else if (!player->usePreyCards(safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_REROLL_PRICE, __FUNCTION__), __FUNCTION__))) {
 			player->sendMessageDialog("You don't have enought prey cards to reroll this prey slot bonus type.");
 			return;
 		}
 
 		slot->reloadBonusType();
 		slot->reloadBonusValue();
-		slot->bonusTimeLeft = static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__));
+		slot->bonusTimeLeft = safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__), __FUNCTION__);
 	} else if (action == PreyAction_MonsterSelection) {
 		if (slot->isOccupied()) {
 			player->sendMessageDialog("You already have an active monster on this prey slot.");
@@ -369,12 +369,12 @@ void IOPrey::parsePreyAction(std::shared_ptr<Player> player, PreySlot_t slotId, 
 		slot->state = PreyDataState_Active;
 		slot->selectedRaceId = slot->raceIdList[index];
 		slot->removeMonsterType(slot->selectedRaceId);
-		slot->bonusTimeLeft = static_cast<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__));
+		slot->bonusTimeLeft = safe_convert<uint16_t>(g_configManager().getNumber(PREY_BONUS_TIME, __FUNCTION__), __FUNCTION__);
 	} else if (action == PreyAction_Option) {
-		if (option == PreyOption_AutomaticReroll && player->getPreyCards() < static_cast<uint64_t>(g_configManager().getNumber(PREY_BONUS_REROLL_PRICE, __FUNCTION__))) {
+		if (option == PreyOption_AutomaticReroll && player->getPreyCards() < safe_convert<uint64_t>(g_configManager().getNumber(PREY_BONUS_REROLL_PRICE, __FUNCTION__), __FUNCTION__)) {
 			player->sendMessageDialog("You don't have enought prey cards to enable automatic reroll when your slot expire.");
 			return;
-		} else if (option == PreyOption_Locked && player->getPreyCards() < static_cast<uint64_t>(g_configManager().getNumber(PREY_SELECTION_LIST_PRICE, __FUNCTION__))) {
+		} else if (option == PreyOption_Locked && player->getPreyCards() < safe_convert<uint64_t>(g_configManager().getNumber(PREY_SELECTION_LIST_PRICE, __FUNCTION__), __FUNCTION__)) {
 			player->sendMessageDialog("You don't have enought prey cards to lock monster and bonus when the slot expire.");
 			return;
 		}
@@ -413,7 +413,7 @@ void IOPrey::parseTaskHuntingAction(std::shared_ptr<Player> player, PreySlot_t s
 		slot->state = PreyTaskDataState_Selection;
 		slot->reloadMonsterGrid(player->getTaskHuntingBlackList(), player->getLevel());
 	} else if (action == PreyTaskAction_RewardsReroll) {
-		if (!player->usePreyCards(static_cast<uint16_t>(g_configManager().getNumber(TASK_HUNTING_BONUS_REROLL_PRICE, __FUNCTION__)))) {
+		if (!player->usePreyCards(safe_convert<uint16_t>(g_configManager().getNumber(TASK_HUNTING_BONUS_REROLL_PRICE, __FUNCTION__), __FUNCTION__))) {
 			player->sendMessageDialog("You don't have enought prey cards to reroll you task reward rarity.");
 			return;
 		}
@@ -425,7 +425,7 @@ void IOPrey::parseTaskHuntingAction(std::shared_ptr<Player> player, PreySlot_t s
 			ss << "You need to wait " << ((slot->disabledUntilTimeStamp - OTSYS_TIME()) / 60000) << " minutes to select a new creature on task.";
 			player->sendMessageDialog(ss.str());
 			return;
-		} else if (!player->usePreyCards(static_cast<uint16_t>(g_configManager().getNumber(TASK_HUNTING_SELECTION_LIST_PRICE, __FUNCTION__)))) {
+		} else if (!player->usePreyCards(safe_convert<uint16_t>(g_configManager().getNumber(TASK_HUNTING_SELECTION_LIST_PRICE, __FUNCTION__), __FUNCTION__))) {
 			player->sendMessageDialog("You don't have enought prey cards to choose a creature on list for you task hunting slot.");
 			return;
 		}
@@ -496,7 +496,7 @@ void IOPrey::parseTaskHuntingAction(std::shared_ptr<Player> player, PreySlot_t s
 			}
 
 			std::ostringstream ss;
-			reward = static_cast<uint64_t>(std::ceil((reward * boostChange) / 10));
+			reward = safe_convert<uint64_t>(std::ceil((reward * boostChange) / 10), __FUNCTION__);
 			ss << "Congratulations! You have earned " << reward;
 			if (boostChange == 20) {
 				ss << " Hunting Task points including a 100% bonus.";
@@ -536,12 +536,12 @@ void IOPrey::initializeTaskHuntOptions() {
 	uint16_t kills = killStage;
 	NetworkMessage msg;
 	for (uint8_t difficulty = PreyTaskDifficult_First; difficulty <= PreyTaskDifficult_Last; ++difficulty) { // Difficulties of creatures on bestiary.
-		auto reward = static_cast<uint16_t>(std::round((10 * kills) / killStage));
+		auto reward = safe_convert<uint16_t>(std::round((10 * kills) / killStage), __FUNCTION__);
 		// Amount of task stars on task hunting
 		for (uint8_t star = 1; star <= limitOfStars; ++star) {
 			const auto &option = taskOption.emplace_back(std::make_unique<TaskHuntingOption>());
 
-			option->difficult = static_cast<PreyTaskDifficult_t>(difficulty);
+			option->difficult = safe_convert<PreyTaskDifficult_t>(difficulty, __FUNCTION__);
 			option->rarity = star;
 
 			option->firstKills = kills;
@@ -550,7 +550,7 @@ void IOPrey::initializeTaskHuntOptions() {
 			option->secondKills = kills * 2;
 			option->secondReward = reward * 2;
 
-			reward = static_cast<uint16_t>(std::round((reward * (115 + (difficulty * limitOfStars))) / 100));
+			reward = safe_convert<uint16_t>(std::round((reward * (115 + (difficulty * limitOfStars))) / 100), __FUNCTION__);
 		}
 
 		kills *= 4;
@@ -558,7 +558,7 @@ void IOPrey::initializeTaskHuntOptions() {
 
 	msg.addByte(0xBA);
 	std::map<uint16_t, std::string> bestiaryList = g_game().getBestiaryList();
-	msg.add<uint16_t>(static_cast<uint16_t>(bestiaryList.size()));
+	msg.add<uint16_t>(safe_convert<uint16_t>(bestiaryList.size(), __FUNCTION__));
 	std::for_each(bestiaryList.begin(), bestiaryList.end(), [&msg](auto mType) {
 		const auto mtype = g_monsters().getMonsterType(mType.second);
 		if (!mtype) {
@@ -575,9 +575,9 @@ void IOPrey::initializeTaskHuntOptions() {
 		}
 	});
 
-	msg.addByte(static_cast<uint8_t>(taskOption.size()));
+	msg.addByte(safe_convert<uint8_t>(taskOption.size(), __FUNCTION__));
 	std::for_each(taskOption.begin(), taskOption.end(), [&msg](const std::unique_ptr<TaskHuntingOption> &option) {
-		msg.addByte(static_cast<uint8_t>(option->difficult));
+		msg.addByte(safe_convert<uint8_t>(option->difficult, __FUNCTION__));
 		msg.addByte(option->rarity);
 		msg.add<uint16_t>(option->firstKills);
 		msg.add<uint16_t>(option->firstReward);

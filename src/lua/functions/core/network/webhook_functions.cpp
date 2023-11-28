@@ -19,7 +19,7 @@ int WebhookFunctions::luaWebhookSendMessage(lua_State* L) {
 	uint32_t color = getNumber<uint32_t>(L, 3, 0);
 	std::string url = getString(L, 4);
 
-	g_webhook().sendMessage(title, message, color, url);
+	g_webhook().sendMessage(title, message, safe_convert<int>(color, __FUNCTION__), url);
 	lua_pushnil(L);
 
 	return 1;

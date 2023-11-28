@@ -375,7 +375,7 @@ int32_t ConfigManager::loadIntConfig(lua_State* L, const ConfigKey_t &key, const
 	int32_t value = defaultValue;
 	lua_getglobal(L, identifier);
 	if (lua_isnumber(L, -1)) {
-		value = static_cast<int32_t>(lua_tointeger(L, -1));
+		value = safe_convert<int32_t>(lua_tointeger(L, -1), __FUNCTION__);
 	}
 	configs[key] = value;
 	lua_pop(L, 1);
@@ -386,7 +386,7 @@ bool ConfigManager::loadBoolConfig(lua_State* L, const ConfigKey_t &key, const c
 	bool value = defaultValue;
 	lua_getglobal(L, identifier);
 	if (lua_isboolean(L, -1)) {
-		value = static_cast<bool>(lua_toboolean(L, -1));
+		value = safe_convert<bool>(lua_toboolean(L, -1), __FUNCTION__);
 	}
 	configs[key] = value;
 	lua_pop(L, 1);
@@ -397,7 +397,7 @@ float ConfigManager::loadFloatConfig(lua_State* L, const ConfigKey_t &key, const
 	float value = defaultValue;
 	lua_getglobal(L, identifier);
 	if (lua_isnumber(L, -1)) {
-		value = static_cast<float>(lua_tonumber(L, -1));
+		value = safe_convert<float>(lua_tonumber(L, -1), __FUNCTION__);
 	}
 	configs[key] = value;
 	lua_pop(L, 1);
