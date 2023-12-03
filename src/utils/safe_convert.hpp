@@ -72,7 +72,7 @@ std::string number_to_string(U value) {
  * int integer = safe_convert<int>("invalid", __FUNCTION__, -1); // Returns -1
  */
 template <typename T, typename U>
-requires (std::is_arithmetic_v<T> && !std::is_enum_v<U>) || (!std::is_enum_v<U> && std::is_same_v<T, std::string>)
+	requires(std::is_arithmetic_v<T> && !std::is_enum_v<U>) || (!std::is_enum_v<U> && std::is_same_v<T, std::string>)
 T safe_convert(U value, std::string_view callerName = "Name not defined", T defaultValue = get_default_value<T>()) {
 	static_assert(std::is_arithmetic_v<T> || std::is_same_v<T, std::string>, "T must be an arithmetic type or string.");
 	try {
@@ -178,7 +178,7 @@ T safe_convert(U value, std::string_view callerName = "Name not defined", T defa
  * MyEnum e3 = safe_convert<MyEnum>(10, "myFunction", MyEnum::C); // Returns MyEnum::C as default
  */
 template <typename T, typename U>
-requires std::is_enum_v<T>
+	requires std::is_enum_v<T>
 T safe_convert(U value, std::string_view callerName = "Name not defined", T defaultValue = T()) {
 	try {
 		if constexpr (std::is_same_v<U, T>) {
@@ -211,7 +211,7 @@ T safe_convert(U value, std::string_view callerName = "Name not defined", T defa
  * unsigned int uval = safe_convert<unsigned int>(MyEnum::X, "callerFunc", 0);
  */
 template <typename Target, typename Source>
-requires std::is_enum_v<Source> && std::is_arithmetic_v<Target>
+	requires std::is_enum_v<Source> && std::is_arithmetic_v<Target>
 Target safe_convert(Source sourceValue, std::string_view callerName = "Name not defined", Target defaultValue = Target()) {
 	try {
 		if constexpr (std::is_same_v<Source, Target>) {
